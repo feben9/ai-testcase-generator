@@ -1,0 +1,134 @@
+{
+  "recording": {
+    "source": "hand-written",
+    "model": "claude-sonnet-5-5",
+    "note": "Hand-written to look like real model output. Planted: AC 3 (no overlapping appointments) has only a negative case. AC 6 is vague in the story; TC-12 handles it correctly by not inventing a target."
+  },
+  "output": {
+    "cases": [
+      {
+        "id": "TC-01",
+        "title": "Book an available slot three days ahead",
+        "type": "positive",
+        "preconditions": ["Patient is signed in", "The clinic calendar has Available slots in 3 days"],
+        "steps": ["Open the clinic calendar", "Select an Available slot in 3 days", "Confirm the booking"],
+        "expected": "The booking is confirmed, and the slot shows as greyed out for other patients.",
+        "ac_refs": [1, 2],
+        "ac_quotes": [
+          {"ac": 1, "text": "An appointment can be booked at least 2 hours and at most 60 days before the slot starts."},
+          {"ac": 2, "text": "Only slots marked \"Available\" in the clinic calendar can be selected; booked slots are shown greyed out."}
+        ]
+      },
+      {
+        "id": "TC-02",
+        "title": "Slot starting in exactly 2 hours can be booked",
+        "type": "boundary",
+        "preconditions": ["Patient is signed in", "An Available slot starts exactly 2 hours from now"],
+        "steps": ["Select that slot", "Confirm the booking"],
+        "expected": "The booking is confirmed.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "An appointment can be booked at least 2 hours and at most 60 days before the slot starts."}]
+      },
+      {
+        "id": "TC-03",
+        "title": "Slot starting in 1 hour 59 minutes cannot be booked",
+        "type": "boundary",
+        "preconditions": ["Patient is signed in", "An Available slot starts 1 hour 59 minutes from now"],
+        "steps": ["Try to select that slot"],
+        "expected": "The slot cannot be booked and no appointment is created.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "An appointment can be booked at least 2 hours and at most 60 days before the slot starts."}]
+      },
+      {
+        "id": "TC-04",
+        "title": "Slot 60 days ahead can be booked",
+        "type": "boundary",
+        "preconditions": ["Patient is signed in", "An Available slot exists 60 days from today"],
+        "steps": ["Move the calendar forward 60 days", "Select the slot and confirm"],
+        "expected": "The booking is confirmed.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "An appointment can be booked at least 2 hours and at most 60 days before the slot starts."}]
+      },
+      {
+        "id": "TC-05",
+        "title": "Slot 61 days ahead cannot be booked",
+        "type": "boundary",
+        "preconditions": ["Patient is signed in"],
+        "steps": ["Move the calendar forward 61 days", "Try to select a slot"],
+        "expected": "No slot on that day can be booked.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "An appointment can be booked at least 2 hours and at most 60 days before the slot starts."}]
+      },
+      {
+        "id": "TC-06",
+        "title": "Booked slot is greyed out and cannot be selected",
+        "type": "negative",
+        "preconditions": ["Patient is signed in", "Another patient has booked tomorrow's first slot"],
+        "steps": ["Open tomorrow in the clinic calendar", "Try to select the booked slot"],
+        "expected": "The slot is greyed out and nothing happens when it is selected.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "Only slots marked \"Available\" in the clinic calendar can be selected; booked slots are shown greyed out."}]
+      },
+      {
+        "id": "TC-07",
+        "title": "Second booking that overlaps an existing appointment is rejected",
+        "type": "negative",
+        "preconditions": ["Patient is signed in", "Patient has an appointment on the 14th from 10:00 to 10:30 at the Main Street clinic"],
+        "steps": ["Select a slot on the 14th from 10:00 to 10:30 at the Park Road clinic", "Confirm the booking"],
+        "expected": "The booking is rejected with the message \"You already have an appointment at this time\".",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "A patient cannot hold two appointments that overlap in time; the second booking is rejected with the message \"You already have an appointment at this time\"."}]
+      },
+      {
+        "id": "TC-08",
+        "title": "Cancel an appointment three days ahead",
+        "type": "positive",
+        "preconditions": ["Patient is signed in", "Patient has an appointment in 3 days"],
+        "steps": ["Open My appointments", "Cancel the appointment and confirm"],
+        "expected": "The appointment is cancelled and no longer listed.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "A patient can cancel an appointment up to 24 hours before it starts; later cancellations are rejected with the message \"Appointments can only be cancelled up to 24 hours in advance\"."}]
+      },
+      {
+        "id": "TC-09",
+        "title": "Cancelling exactly 24 hours before the start is allowed",
+        "type": "boundary",
+        "preconditions": ["Patient is signed in", "Patient has an appointment that starts in exactly 24 hours"],
+        "steps": ["Cancel the appointment and confirm"],
+        "expected": "The appointment is cancelled.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "A patient can cancel an appointment up to 24 hours before it starts; later cancellations are rejected with the message \"Appointments can only be cancelled up to 24 hours in advance\"."}]
+      },
+      {
+        "id": "TC-10",
+        "title": "Cancelling 23 hours before the start is rejected",
+        "type": "boundary",
+        "preconditions": ["Patient is signed in", "Patient has an appointment that starts in 23 hours"],
+        "steps": ["Try to cancel the appointment"],
+        "expected": "The cancellation is rejected with the message \"Appointments can only be cancelled up to 24 hours in advance\".",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "A patient can cancel an appointment up to 24 hours before it starts; later cancellations are rejected with the message \"Appointments can only be cancelled up to 24 hours in advance\"."}]
+      },
+      {
+        "id": "TC-11",
+        "title": "Confirmation email has the date, time and clinic address",
+        "type": "positive",
+        "preconditions": ["Patient is signed in with email pat@example.com"],
+        "steps": ["Book an Available slot", "Open the confirmation email in pat@example.com"],
+        "expected": "The email shows the appointment date, start time and the clinic's address.",
+        "ac_refs": [5],
+        "ac_quotes": [{"ac": 5, "text": "After booking, the patient receives a confirmation email with the date, time and clinic address."}]
+      },
+      {
+        "id": "TC-12",
+        "title": "Calendar load time on a slow connection (target needed)",
+        "type": "positive",
+        "preconditions": ["Patient is signed in", "Browser network throttling is set to the Slow 3G profile"],
+        "steps": ["Open the clinic calendar", "Record how long it takes until the slots are visible"],
+        "expected": "The story gives no load-time target, so this case cannot pass or fail yet; record the observed time and ask the product owner to agree a target.",
+        "ac_refs": [6],
+        "ac_quotes": [{"ac": 6, "text": "The calendar should load quickly, even on slow connections."}]
+      }
+    ]
+  }
+}

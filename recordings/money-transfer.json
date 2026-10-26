@@ -1,0 +1,194 @@
+{
+  "recording": {
+    "source": "hand-written",
+    "model": "claude-sonnet-5-5",
+    "note": "Hand-written to look like real model output. Planted: TC-06 restates the per-transfer limit as 5,000.00 (AC 1 says 10,000.00); AC 3 (OTP above 2,000.00) has no boundary cases."
+  },
+  "output": {
+    "cases": [
+      {
+        "id": "TC-01",
+        "title": "Send a transfer within the single-transfer limits",
+        "type": "positive",
+        "preconditions": ["Customer is signed in", "Available balance is 5,000.00 EUR", "Recipient is saved with a valid IBAN"],
+        "steps": ["Open Send money", "Select the saved recipient", "Enter 250.00 as the amount", "Review and confirm"],
+        "expected": "The transfer is sent, the confirmation shows a reference number, and the transfer is the first entry in the transaction history.",
+        "ac_refs": [1, 7],
+        "ac_quotes": [
+          {"ac": 1, "text": "A single transfer must be at least 1.00 EUR and at most 10,000.00 EUR."},
+          {"ac": 7, "text": "After a successful transfer the sender sees a confirmation with a reference number, and the transfer appears at the top of the transaction history."}
+        ]
+      },
+      {
+        "id": "TC-02",
+        "title": "Minimum amount of 1.00 EUR is accepted",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Available balance is 100.00 EUR"],
+        "steps": ["Open Send money and select a recipient", "Enter 1.00 as the amount", "Tap Continue"],
+        "expected": "The amount is accepted and the review screen opens.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A single transfer must be at least 1.00 EUR and at most 10,000.00 EUR."}]
+      },
+      {
+        "id": "TC-03",
+        "title": "Amount of 0.99 EUR is rejected",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Available balance is 100.00 EUR"],
+        "steps": ["Open Send money and select a recipient", "Enter 0.99 as the amount"],
+        "expected": "The amount field shows a validation error and Continue stays disabled.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A single transfer must be at least 1.00 EUR and at most 10,000.00 EUR."}]
+      },
+      {
+        "id": "TC-04",
+        "title": "Maximum amount of 10,000.00 EUR is accepted",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Available balance is 20,000.00 EUR", "No transfers sent today"],
+        "steps": ["Open Send money and select a recipient", "Enter 10,000.00 as the amount", "Complete the OTP step and confirm"],
+        "expected": "The transfer is sent and the confirmation shows a reference number.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A single transfer must be at least 1.00 EUR and at most 10,000.00 EUR."}]
+      },
+      {
+        "id": "TC-05",
+        "title": "Amount of 10,000.01 EUR is rejected",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Available balance is 20,000.00 EUR"],
+        "steps": ["Open Send money and select a recipient", "Enter 10,000.01 as the amount"],
+        "expected": "The amount field shows a validation error, Continue stays disabled and no money leaves the account.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A single transfer must be at least 1.00 EUR and at most 10,000.00 EUR."}]
+      },
+      {
+        "id": "TC-06",
+        "title": "Amount above the single-transfer maximum is rejected",
+        "type": "negative",
+        "preconditions": ["Customer is signed in", "Available balance is 20,000.00 EUR"],
+        "steps": ["Open Send money and select a recipient", "Enter 12,000.00 as the amount", "Tap Continue"],
+        "expected": "The transfer is rejected with the message \"Amount exceeds the per-transfer limit of 5,000.00 EUR\".",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A single transfer must be at least 1.00 EUR and at most 10,000.00 EUR."}]
+      },
+      {
+        "id": "TC-07",
+        "title": "Transfer that keeps the daily total under the limit is sent",
+        "type": "positive",
+        "preconditions": ["Customer is signed in", "5,000.00 EUR already sent today", "Available balance is 20,000.00 EUR"],
+        "steps": ["Send 3,000.00 to a saved recipient", "Complete the OTP step"],
+        "expected": "The transfer is sent and no daily-limit message is shown.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "The total of a customer's transfers in one calendar day must not exceed 25,000.00 EUR; a transfer that would take the total over this is rejected with the message \"Daily transfer limit of 25,000.00 EUR reached\"."}]
+      },
+      {
+        "id": "TC-08",
+        "title": "Daily total of exactly 25,000.00 EUR is accepted",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Two transfers of 10,000.00 EUR already sent today", "Available balance is 40,000.00 EUR"],
+        "steps": ["Send 5,000.00 to a saved recipient", "Complete the OTP step"],
+        "expected": "The transfer is sent; today's total is 25,000.00 EUR.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "The total of a customer's transfers in one calendar day must not exceed 25,000.00 EUR"}]
+      },
+      {
+        "id": "TC-09",
+        "title": "Transfer that takes the daily total to 25,000.01 EUR is rejected",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "24,000.00 EUR already sent today", "Available balance is 40,000.00 EUR"],
+        "steps": ["Send 1,000.01 to a saved recipient", "Complete the OTP step"],
+        "expected": "The transfer is rejected with the message \"Daily transfer limit of 25,000.00 EUR reached\" and no money leaves the account.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "The total of a customer's transfers in one calendar day must not exceed 25,000.00 EUR; a transfer that would take the total over this is rejected with the message \"Daily transfer limit of 25,000.00 EUR reached\"."}]
+      },
+      {
+        "id": "TC-10",
+        "title": "Transfer above 2,000.00 EUR asks for a one-time passcode",
+        "type": "positive",
+        "preconditions": ["Customer is signed in", "Available balance is 5,000.00 EUR"],
+        "steps": ["Send 2,500.00 to a saved recipient", "Enter the OTP received by SMS"],
+        "expected": "An OTP screen opens before sending, and the transfer is sent only after the correct OTP is entered.",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "Transfers above 2,000.00 EUR require a one-time passcode (OTP) before they are sent."}]
+      },
+      {
+        "id": "TC-11",
+        "title": "Wrong OTP stops a large transfer",
+        "type": "negative",
+        "preconditions": ["Customer is signed in", "Available balance is 5,000.00 EUR"],
+        "steps": ["Send 3,000.00 to a saved recipient", "Enter a wrong OTP"],
+        "expected": "The transfer is not sent and the OTP screen shows an error.",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "Transfers above 2,000.00 EUR require a one-time passcode (OTP) before they are sent."}]
+      },
+      {
+        "id": "TC-12",
+        "title": "Fee is 0.5% of the amount",
+        "type": "positive",
+        "preconditions": ["Customer is signed in", "Available balance is 2,000.00 EUR"],
+        "steps": ["Send 1,000.00 to a saved recipient", "Check the review screen"],
+        "expected": "The review screen shows a fee of 5.00 EUR and a total of 1,005.00 EUR.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "A fee of 0.5% of the amount is charged, with a minimum fee of 0.50 EUR."}]
+      },
+      {
+        "id": "TC-13",
+        "title": "Fee for 100.00 EUR equals the minimum fee",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Available balance is 500.00 EUR"],
+        "steps": ["Send 100.00 to a saved recipient", "Check the review screen"],
+        "expected": "The review screen shows a fee of 0.50 EUR.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "A fee of 0.5% of the amount is charged, with a minimum fee of 0.50 EUR."}]
+      },
+      {
+        "id": "TC-14",
+        "title": "Fee below the minimum is raised to 0.50 EUR",
+        "type": "boundary",
+        "preconditions": ["Customer is signed in", "Available balance is 500.00 EUR"],
+        "steps": ["Send 98.00 to a saved recipient (0.5% would be 0.49)", "Check the review screen"],
+        "expected": "The review screen shows the minimum fee of 0.50 EUR, not 0.49 EUR.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "A fee of 0.5% of the amount is charged, with a minimum fee of 0.50 EUR."}]
+      },
+      {
+        "id": "TC-15",
+        "title": "Amount plus fee above the balance is rejected",
+        "type": "negative",
+        "preconditions": ["Customer is signed in", "Available balance is 100.00 EUR"],
+        "steps": ["Send 99.80 to a saved recipient (fee 0.50, total 100.30)"],
+        "expected": "The transfer is rejected with the message \"Insufficient funds\".",
+        "ac_refs": [5],
+        "ac_quotes": [{"ac": 5, "text": "A transfer larger than the available balance (amount plus fee) is rejected with the message \"Insufficient funds\"."}]
+      },
+      {
+        "id": "TC-16",
+        "title": "Amount plus fee equal to the balance is sent",
+        "type": "positive",
+        "preconditions": ["Customer is signed in", "Available balance is 100.50 EUR"],
+        "steps": ["Send 100.00 to a saved recipient (fee 0.50, total 100.50)"],
+        "expected": "The transfer is sent and the available balance shows 0.00 EUR.",
+        "ac_refs": [5],
+        "ac_quotes": [{"ac": 5, "text": "A transfer larger than the available balance (amount plus fee) is rejected with the message \"Insufficient funds\"."}]
+      },
+      {
+        "id": "TC-17",
+        "title": "IBAN with a wrong checksum is rejected",
+        "type": "negative",
+        "preconditions": ["Customer is signed in"],
+        "steps": ["Open Send money and choose New recipient", "Enter the IBAN DE89 3704 0044 0532 0130 01", "Tap Continue"],
+        "expected": "The message \"Check the IBAN and try again\" is shown and the amount screen does not open.",
+        "ac_refs": [6],
+        "ac_quotes": [{"ac": 6, "text": "An IBAN that fails the checksum is rejected with the message \"Check the IBAN and try again\" before the amount screen opens."}]
+      },
+      {
+        "id": "TC-18",
+        "title": "Valid IBAN opens the amount screen",
+        "type": "positive",
+        "preconditions": ["Customer is signed in"],
+        "steps": ["Open Send money and choose New recipient", "Enter the IBAN DE89 3704 0044 0532 0130 00", "Tap Continue"],
+        "expected": "The amount screen opens.",
+        "ac_refs": [6],
+        "ac_quotes": [{"ac": 6, "text": "An IBAN that fails the checksum is rejected with the message \"Check the IBAN and try again\" before the amount screen opens."}]
+      }
+    ]
+  }
+}

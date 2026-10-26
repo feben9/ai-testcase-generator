@@ -1,0 +1,171 @@
+{
+  "recording": {
+    "source": "hand-written",
+    "model": "claude-sonnet-5-5",
+    "note": "Hand-written to look like real model output. Planted: TC-15 cites an AC 8 (virus scanning) that the story does not have; TC-16 repeats TC-03."
+  },
+  "output": {
+    "cases": [
+      {
+        "id": "TC-01",
+        "title": "PDF, JPG and PNG files can be attached",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open with no files attached"],
+        "steps": ["Upload receipt.pdf (2 MB)", "Upload photo.jpg (3 MB)", "Upload damage.png (1 MB)"],
+        "expected": "All three files are attached and listed on the claim.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "Accepted file types are PDF, JPG and PNG; any other type is rejected with the message \"File type not supported\"."}]
+      },
+      {
+        "id": "TC-02",
+        "title": "Word document is rejected",
+        "type": "negative",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload letter.docx"],
+        "expected": "The upload is rejected with the message \"File type not supported\" and nothing is attached.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "Accepted file types are PDF, JPG and PNG; any other type is rejected with the message \"File type not supported\"."}]
+      },
+      {
+        "id": "TC-03",
+        "title": "Upload a PDF below the size limit",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Open the claim CLM-2041", "Choose Upload and select statement.pdf (4 MB)", "Wait for the upload to finish"],
+        "expected": "statement.pdf is attached and listed with its size.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "A single file must be at most 10 MB; a larger file is rejected with the message \"File is larger than 10 MB\"."}]
+      },
+      {
+        "id": "TC-04",
+        "title": "File of exactly 10 MB is accepted",
+        "type": "boundary",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload scan.pdf of 10,485,760 bytes"],
+        "expected": "scan.pdf is attached.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "A single file must be at most 10 MB; a larger file is rejected with the message \"File is larger than 10 MB\"."}]
+      },
+      {
+        "id": "TC-05",
+        "title": "File one byte over 10 MB is rejected",
+        "type": "boundary",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload scan_big.pdf of 10,485,761 bytes"],
+        "expected": "The upload is rejected with the message \"File is larger than 10 MB\".",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "A single file must be at most 10 MB; a larger file is rejected with the message \"File is larger than 10 MB\"."}]
+      },
+      {
+        "id": "TC-06",
+        "title": "A claim can hold 5 files",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open with no files attached"],
+        "steps": ["Upload five small PDF files one after another"],
+        "expected": "All 5 files are attached and listed.",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "A claim can have at most 5 files attached; the Upload button is disabled while 5 files are attached."}]
+      },
+      {
+        "id": "TC-07",
+        "title": "Upload button is disabled once the 5th file is attached",
+        "type": "boundary",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 has 4 files attached"],
+        "steps": ["Upload a 5th file", "Look at the Upload button"],
+        "expected": "The 5th file is listed and the Upload button becomes disabled.",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "A claim can have at most 5 files attached; the Upload button is disabled while 5 files are attached."}]
+      },
+      {
+        "id": "TC-08",
+        "title": "Removing a file enables Upload again",
+        "type": "boundary",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 has 5 files attached"],
+        "steps": ["Remove one file so 4 remain", "Look at the Upload button"],
+        "expected": "The Upload button is enabled.",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "A claim can have at most 5 files attached; the Upload button is disabled while 5 files are attached."}]
+      },
+      {
+        "id": "TC-09",
+        "title": "Executable renamed to .pdf is rejected",
+        "type": "negative",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Rename setup.exe to invoice.pdf", "Upload invoice.pdf"],
+        "expected": "The upload is rejected as \"File type not supported\".",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "The file type is checked from the file's content, not only its extension; an executable renamed to .pdf is rejected as \"File type not supported\"."}]
+      },
+      {
+        "id": "TC-10",
+        "title": "Genuine PDF with an upper-case extension is accepted",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload a real PDF named SCAN.PDF"],
+        "expected": "SCAN.PDF is attached, because its content is PDF.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "The file type is checked from the file's content, not only its extension"}]
+      },
+      {
+        "id": "TC-11",
+        "title": "File name of exactly 100 characters is accepted",
+        "type": "boundary",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload a PDF whose name, including .pdf, is 100 characters long"],
+        "expected": "The file is attached with its full name.",
+        "ac_refs": [5],
+        "ac_quotes": [{"ac": 5, "text": "A file name can be at most 100 characters long, including the extension; a longer name is rejected with the message \"File name is too long\"."}]
+      },
+      {
+        "id": "TC-12",
+        "title": "File name of 101 characters is rejected",
+        "type": "boundary",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload a PDF whose name, including .pdf, is 101 characters long"],
+        "expected": "The upload is rejected with the message \"File name is too long\".",
+        "ac_refs": [5],
+        "ac_quotes": [{"ac": 5, "text": "A file name can be at most 100 characters long, including the extension; a longer name is rejected with the message \"File name is too long\"."}]
+      },
+      {
+        "id": "TC-13",
+        "title": "Short file name is accepted",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Upload receipt.pdf"],
+        "expected": "receipt.pdf is attached with its name unchanged.",
+        "ac_refs": [5],
+        "ac_quotes": [{"ac": 5, "text": "A file name can be at most 100 characters long, including the extension; a longer name is rejected with the message \"File name is too long\"."}]
+      },
+      {
+        "id": "TC-14",
+        "title": "Files are listed newest first with name, size and date",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open with no files attached"],
+        "steps": ["Upload first.pdf", "Upload second.png", "Look at the file list"],
+        "expected": "second.png is listed above first.pdf, and each row shows the file name, size and upload date.",
+        "ac_refs": [6],
+        "ac_quotes": [{"ac": 6, "text": "Attached files are listed with their name, size and upload date, newest first."}]
+      },
+      {
+        "id": "TC-15",
+        "title": "Infected file is blocked by the virus scan",
+        "type": "negative",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Save the EICAR test string as eicar.pdf", "Upload eicar.pdf"],
+        "expected": "The upload is rejected with the message \"This file may contain a virus\".",
+        "ac_refs": [8],
+        "ac_quotes": [{"ac": 8, "text": "Uploaded files are scanned for viruses, and infected files are rejected."}]
+      },
+      {
+        "id": "TC-16",
+        "title": "Uploading a PDF below the size limit succeeds",
+        "type": "positive",
+        "preconditions": ["Policyholder is signed in", "Claim CLM-2041 is open"],
+        "steps": ["Open the claim CLM-2041", "Choose Upload and pick statement.pdf (4 MB)", "Wait until the upload finishes"],
+        "expected": "statement.pdf is attached and shown in the list with its size.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "A single file must be at most 10 MB; a larger file is rejected with the message \"File is larger than 10 MB\"."}]
+      }
+    ]
+  }
+}

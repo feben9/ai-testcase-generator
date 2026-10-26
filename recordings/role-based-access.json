@@ -1,0 +1,127 @@
+{
+  "recording": {
+    "source": "hand-written",
+    "model": "claude-sonnet-5-5",
+    "note": "Hand-written to look like real model output. Planted: TC-11 tests a PDF export the story never mentions and cites no AC; AC 5 (audit log) has no case."
+  },
+  "output": {
+    "cases": [
+      {
+        "id": "TC-01",
+        "title": "Viewer can open the Monthly Summary",
+        "type": "positive",
+        "preconditions": ["User viewer.one has the Viewer role"],
+        "steps": ["Sign in as viewer.one", "Open Reports", "Open Monthly Summary"],
+        "expected": "The Monthly Summary report opens.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A Viewer can open the Monthly Summary report only; other reports do not appear in the Viewer's report list."}]
+      },
+      {
+        "id": "TC-02",
+        "title": "Viewer's report list hides every other report",
+        "type": "negative",
+        "preconditions": ["User viewer.one has the Viewer role"],
+        "steps": ["Sign in as viewer.one", "Open Reports"],
+        "expected": "The list shows only Monthly Summary; Transaction Detail and Payroll are not listed.",
+        "ac_refs": [1],
+        "ac_quotes": [{"ac": 1, "text": "A Viewer can open the Monthly Summary report only; other reports do not appear in the Viewer's report list."}]
+      },
+      {
+        "id": "TC-03",
+        "title": "Analyst can open Monthly Summary and Transaction Detail",
+        "type": "positive",
+        "preconditions": ["User analyst.one has the Analyst role"],
+        "steps": ["Sign in as analyst.one", "Open Monthly Summary", "Go back and open Transaction Detail"],
+        "expected": "Both reports open.",
+        "ac_refs": [2],
+        "ac_quotes": [{"ac": 2, "text": "An Analyst can open the Monthly Summary and Transaction Detail reports."}]
+      },
+      {
+        "id": "TC-04",
+        "title": "Analyst opening the Payroll URL is refused",
+        "type": "negative",
+        "preconditions": ["User analyst.one has the Analyst role", "The Payroll report URL is known"],
+        "steps": ["Sign in as analyst.one", "Paste the Payroll report URL into the address bar"],
+        "expected": "The server returns HTTP 403 and the page shows \"You don't have access to this report\".",
+        "ac_refs": [2, 4],
+        "ac_quotes": [
+          {"ac": 2, "text": "An Analyst can open the Monthly Summary and Transaction Detail reports."},
+          {"ac": 4, "text": "Opening a report's URL directly without permission returns HTTP 403 and shows the message \"You don't have access to this report\"."}
+        ]
+      },
+      {
+        "id": "TC-05",
+        "title": "Finance Manager can open every report, including Payroll",
+        "type": "positive",
+        "preconditions": ["User fm.one has the Finance Manager role"],
+        "steps": ["Sign in as fm.one", "Open each report in the list in turn"],
+        "expected": "Monthly Summary, Transaction Detail and Payroll all open.",
+        "ac_refs": [3],
+        "ac_quotes": [{"ac": 3, "text": "A Finance Manager can open every report, including Payroll."}]
+      },
+      {
+        "id": "TC-06",
+        "title": "Viewer typing the Transaction Detail URL gets an access-denied page",
+        "type": "negative",
+        "preconditions": ["User viewer.one has the Viewer role"],
+        "steps": ["Sign in as viewer.one", "Type the Transaction Detail report URL directly"],
+        "expected": "HTTP 403 is returned with the message \"You don't have access to this report\", and no report data is shown.",
+        "ac_refs": [4],
+        "ac_quotes": [{"ac": 4, "text": "Opening a report's URL directly without permission returns HTTP 403 and shows the message \"You don't have access to this report\"."}]
+      },
+      {
+        "id": "TC-07",
+        "title": "Permitted user opening a report URL directly sees the report",
+        "type": "positive",
+        "preconditions": ["User analyst.one has the Analyst role"],
+        "steps": ["Sign in as analyst.one", "Type the Transaction Detail report URL directly"],
+        "expected": "The Transaction Detail report opens with no access-denied message.",
+        "ac_refs": [2, 4],
+        "ac_quotes": [
+          {"ac": 2, "text": "An Analyst can open the Monthly Summary and Transaction Detail reports."},
+          {"ac": 4, "text": "Opening a report's URL directly without permission returns HTTP 403 and shows the message \"You don't have access to this report\"."}
+        ]
+      },
+      {
+        "id": "TC-08",
+        "title": "Role change applies at the next sign-in",
+        "type": "positive",
+        "preconditions": ["User viewer.two has the Viewer role and is signed out"],
+        "steps": ["As an administrator, change viewer.two to Analyst", "Sign in as viewer.two", "Open Reports"],
+        "expected": "Transaction Detail now appears in the list and opens.",
+        "ac_refs": [6],
+        "ac_quotes": [{"ac": 6, "text": "A role change takes effect at the user's next sign-in; a session that is already open keeps the old permissions until then."}]
+      },
+      {
+        "id": "TC-09",
+        "title": "Open session keeps the old permissions after a role change",
+        "type": "negative",
+        "preconditions": ["User viewer.two has the Viewer role and is signed in"],
+        "steps": ["As an administrator, change viewer.two to Analyst", "In the user's open session, refresh Reports"],
+        "expected": "The list still shows only Monthly Summary until the user signs in again.",
+        "ac_refs": [6],
+        "ac_quotes": [{"ac": 6, "text": "A role change takes effect at the user's next sign-in; a session that is already open keeps the old permissions until then."}]
+      },
+      {
+        "id": "TC-10",
+        "title": "Payroll shows the viewer's email as a watermark on every page",
+        "type": "positive",
+        "preconditions": ["User fm.one (fm.one@example.com) has the Finance Manager role", "The Payroll report has 3 pages"],
+        "steps": ["Sign in as fm.one", "Open Payroll", "Scroll through every page"],
+        "expected": "Each page shows fm.one@example.com as a watermark.",
+        "ac_refs": [7],
+        "ac_quotes": [{"ac": 7, "text": "The Payroll report shows the viewer's email address as a watermark on every page."}]
+      },
+      {
+        "id": "TC-11",
+        "title": "Finance Manager can export the Payroll report as PDF",
+        "type": "positive",
+        "preconditions": ["User fm.one has the Finance Manager role"],
+        "steps": ["Sign in as fm.one", "Open Payroll", "Click Export and choose PDF"],
+        "expected": "A PDF downloads and keeps the watermark on every page.",
+        "ac_refs": [],
+        "ac_quotes": []
+      }
+    ]
+  }
+}

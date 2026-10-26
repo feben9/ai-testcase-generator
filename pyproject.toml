@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tcgen"
+version = "0.1.0"
+description = "Generate test cases from user stories with Claude, then verify every case against the acceptance criteria."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Feben Tibebe" }]
+dependencies = ["anthropic>=2.3,<3", "pydantic>=2.7,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+tcgen = "tcgen.cli:main"
+
+[tool.setuptools]
+packages = ["tcgen"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]

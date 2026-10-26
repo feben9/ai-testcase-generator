@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "Also generate cases with the live Claude API (needs the ANTHROPIC_API_KEY repo secret)"
+        type: boolean
+        default: false
+
+jobs:
+  offline:
+    name: tests + offline generate + verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Generate from recordings (no API key needed)
+        run: python -m tcgen generate stories/*.md --offline
+
+      - name: Verify recordings (the gate must FAIL on the planted problems)
+        run: |
+          set +e
+          python -m tcgen verify --matrix --json reports/verification.json
+          code=$?
+          set -e
+          if [ "$code" -ne 1 ]; then
+            echo "::error::expected the gate to fail with exit 1 on the planted recordings, got $code"
+            exit 1
+          fi
+          echo "Gate failed as expected: the planted problems were caught."
+
+      - name: Verify the clean hand-written sets (the gate must PASS, strict)
+        run: python -m tcgen verify --cases tests/fixtures/clean --strict --json reports/clean-verification.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-reports
+          path: reports/
+
+  live:
+    name: live generate + verify (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.live
+    needs: offline
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+
+      - name: Check the secret is set
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::add an ANTHROPIC_API_KEY repository secret to run the live job"
+            exit 1
+          fi
+
+      - name: Generate with Claude
+        run: python -m tcgen generate stories/*.md --out generated-live
+
+      - name: Verify the live output (the gate decides)
+        run: python -m tcgen verify --cases generated-live --matrix --json reports/live-verification.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-output
+          path: |
+            generated-live/
+            reports/
